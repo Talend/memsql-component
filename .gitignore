@@ -1,0 +1,7 @@
+# Project exclude paths
+/target/
+/.idea/
+/.mvn/
+memsql-component.iml
+mvnw.cmd
+mvnw
