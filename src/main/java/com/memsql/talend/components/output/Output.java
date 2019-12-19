@@ -98,6 +98,8 @@ public class Output implements Serializable {
         if (!this.tableExistsCheck && !this.configuration.isCreateTableIfNotExists()) {
             throw new IllegalStateException(this.i18nMessage.errorTaberDoesNotExists(this.configuration.getDataset().getTableName()));
         }
+        if (this.tableExistsCheck && this.configuration.getTruncateTable())
+            queryManager.truncate(this.configuration.getDataset().getTableName(), datasource);
     }
 
     @AfterGroup

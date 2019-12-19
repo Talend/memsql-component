@@ -46,6 +46,12 @@ public abstract class QueryManagerImpl implements QueryManager {
 
     public OutputConfiguration getConfiguration() { return this.configuration; }
 
+    public void truncate(String tableName, final MemsqlComponentService.DataSource dataSource) throws SQLException {
+        try (final Connection connection = dataSource.getConnection()) {
+            connection.createStatement().executeQuery("truncate table " + tableName);
+        }
+    }
+
     public I18nMessage getI18n() { return this.i18n; }
     @Override
     public List<Reject> execute(final List<Record> records, final MemsqlComponentService.DataSource dataSource) throws SQLException {

@@ -41,6 +41,8 @@ public class BulkLoad extends QueryManagerImpl {
             path = dir.getCanonicalPath();
             filePath = path + File.separator + getConfiguration().getDataset().getTableName() +
                     "_" + new Date().getTime() + ".csv";
+            if (File.separator.equals("\\"))
+                filePath.replaceAll("\\\\", "/");
             fileWriter = new FileWriter(new File(filePath));
         } catch(IOException e) {
             LOG.error(e.getMessage());
@@ -128,7 +130,7 @@ public class BulkLoad extends QueryManagerImpl {
         LOG.debug("Rows Processed " + rows + "  for file " + filePath);
         connection.commit();
 
-        new File(filePath).delete();
+
         System.out.println("Load Time " + (new Date().getTime() - start));
     }
 }
