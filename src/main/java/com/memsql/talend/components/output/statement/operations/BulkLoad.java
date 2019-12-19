@@ -125,12 +125,12 @@ public class BulkLoad extends QueryManagerImpl {
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
-        System.out.println(filePath);
+
         int rows = connection.createStatement().executeUpdate("LOAD DATA LOCAL INFILE '"+filePath+"' INTO TABLE " + getConfiguration().getDataset().getTableName() + " FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n'");
         LOG.debug("Rows Processed " + rows + "  for file " + filePath);
         connection.commit();
+        new File(filePath).delete();
 
-
-        System.out.println("Load Time " + (new Date().getTime() - start));
+        System.out.println("Load Data Execution Time: " + (new Date().getTime() - start) + " milliseconds");
     }
 }
