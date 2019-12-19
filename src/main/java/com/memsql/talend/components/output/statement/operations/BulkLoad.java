@@ -41,8 +41,8 @@ public class BulkLoad extends QueryManagerImpl {
             path = dir.getCanonicalPath();
             filePath = path + File.separator + getConfiguration().getDataset().getTableName() +
                     "_" + new Date().getTime() + ".csv";
-            //if (File.separator.equals("\\"))
-            //    filePath.replaceAll("\\\\", "/");
+            if (File.separator.equals("\\"))
+                filePath.replaceAll("\\\\", "/");
             fileWriter = new FileWriter(new File(filePath));
         } catch(IOException e) {
             LOG.error(e.getMessage());
