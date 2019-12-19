@@ -41,8 +41,8 @@ public class BulkLoad extends QueryManagerImpl {
             path = dir.getCanonicalPath();
             filePath = path + File.separator + getConfiguration().getDataset().getTableName() +
                     "_" + new Date().getTime() + ".csv";
-            if (File.separator.equals("\\"))
-                filePath.replaceAll("\\\\", "/");
+            //if (File.separator.equals("\\"))
+            //    filePath.replaceAll("\\\\", "/");
             fileWriter = new FileWriter(new File(filePath));
         } catch(IOException e) {
             LOG.error(e.getMessage());
@@ -125,7 +125,7 @@ public class BulkLoad extends QueryManagerImpl {
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
-
+        System.out.println(filePath);
         int rows = connection.createStatement().executeUpdate("LOAD DATA LOCAL INFILE '"+filePath+"' INTO TABLE " + getConfiguration().getDataset().getTableName() + " FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n'");
         LOG.debug("Rows Processed " + rows + "  for file " + filePath);
         connection.commit();
