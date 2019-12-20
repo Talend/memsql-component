@@ -25,29 +25,14 @@ import static java.util.stream.Collectors.toList;
 public class BulkLoad extends QueryManagerImpl {
     private static final transient Logger LOG = LoggerFactory.getLogger(BulkLoad.class);
     private Map<Integer, Schema.Entry> namedParams;
-    private Writer bulkFile;
-    private String filePath = null;
-    private File dir = new File("." + File.separator + "memsql_bulk_loader");
+
+
 
     public BulkLoad(final OutputConfiguration configuration, final I18nMessage i18n) {
         super(i18n, configuration);
 
-        String path = ".";
-        FileWriter fileWriter = null;
 
-        try {
-            if (!dir.exists())
-                dir.mkdir();
-            path = dir.getCanonicalPath();
-            filePath = path + File.separator + getConfiguration().getDataset().getTableName() +
-                    "_" + new Date().getTime() + ".csv";
-            if (filePath.contains("\\"))
-                filePath = filePath.replaceAll("\\\\", "/");
-            fileWriter = new FileWriter(new File(filePath));
-        } catch(IOException e) {
-            LOG.error(e.getMessage());
-        }
-        bulkFile = new BufferedWriter(fileWriter);
+
     }
 
     @Override
@@ -86,7 +71,7 @@ public class BulkLoad extends QueryManagerImpl {
     private List<Reject> processRecords(final List<Record> records, final Connection connection)
             throws SQLException {
         List<Reject> rejects = new ArrayList<Reject>();
-
+        BulkLoadWriter writer = BulkLoadWriter.getInstance(getConfiguration().getDataset().getTableName());
         StringBuilder buffer = new StringBuilder();
         List<String> lines = new ArrayList<String>();
 
@@ -102,13 +87,7 @@ public class BulkLoad extends QueryManagerImpl {
                         entry.getValue(), record);
             }
             buffer.append(lines.stream().collect(Collectors.joining(","))+"\n");
-            try {
-                bulkFile.write(buffer.toString());
-                bulkFile.flush();
-            } catch(IOException e)
-            {
-                LOG.error(e.getMessage());
-            }
+            writer.write(buffer.toString());
             lines.clear();
         }
 
@@ -119,17 +98,13 @@ public class BulkLoad extends QueryManagerImpl {
     @Override
     public void load(final Connection connection) throws SQLException {
         long start = new Date().getTime();
-        try {
-            bulkFile.flush();
-            bulkFile.close();
-        } catch (IOException e) {
-            LOG.error(e.getMessage());
-        }
-
+        BulkLoadWriter writer = BulkLoadWriter.getInstance(getConfiguration().getDataset().getTableName());
+        writer.close();
+        String filePath = writer.getFilePath();
         int rows = connection.createStatement().executeUpdate("LOAD DATA LOCAL INFILE '"+filePath+"' INTO TABLE " + getConfiguration().getDataset().getTableName() + " FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n'");
         LOG.debug("Rows Processed " + rows + "  for file " + filePath);
         connection.commit();
-        new File(filePath).delete();
+        writer.delete();
 
         System.out.println("Load Data Execution Time: " + (new Date().getTime() - start) + " milliseconds");
     }
