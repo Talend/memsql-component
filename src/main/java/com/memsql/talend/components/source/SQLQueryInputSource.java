@@ -36,6 +36,7 @@ public class SQLQueryInputSource implements Serializable {
     private Statement statement;
     private ResultSet resultSet;
     private transient Schema schema;
+    private boolean isGuessSchema = false;
     private static final transient Logger LOG = LoggerFactory.getLogger(SQLQueryInputSource.class);
 
     public SQLQueryInputSource(@Option("configuration") final SQLQueryInputMapperConfiguration configuration,
@@ -65,6 +66,13 @@ public class SQLQueryInputSource implements Serializable {
             statement = connection.createStatement();
             statement.setFetchSize(configuration.getDataset().getFetchSize());
             resultSet = statement.executeQuery(configuration.getDataset().getQuery());
+            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+            String genisisClass = stackTraceElements[stackTraceElements.length -1].getClassName();
+            if (genisisClass.contains("guess_schema"))
+            {
+
+                isGuessSchema = true;
+            }
         } catch (final SQLException e) {
             throw new IllegalStateException(e);
         }
@@ -78,7 +86,7 @@ public class SQLQueryInputSource implements Serializable {
         // return null means the dataset has no more data to go through
         // you can use the builderFactory to create a new Record.
         try {
-            if (!resultSet.next()) {
+            if (!resultSet.next()  && !isGuessSchema) {
                 return null;
             }
 
@@ -90,7 +98,12 @@ public class SQLQueryInputSource implements Serializable {
             }
 
             final Record.Builder recordBuilder = builderFactory.newRecordBuilder(schema);
-            IntStream.rangeClosed(1, metaData.getColumnCount()).forEach(index -> addColumn(recordBuilder, metaData, index));
+            if (isGuessSchema) {
+                IntStream.rangeClosed(1, metaData.getColumnCount()).forEach(index -> emptyTable(recordBuilder, metaData, index));
+                isGuessSchema = false;
+            }
+            else
+                IntStream.rangeClosed(1, metaData.getColumnCount()).forEach(index -> addColumn(recordBuilder, metaData, index));
             return recordBuilder.build();
         } catch (final SQLException e) {
             throw new IllegalStateException(e);
@@ -101,7 +114,7 @@ public class SQLQueryInputSource implements Serializable {
     public void release() {
         // this is the symmetric method of the init() one,
         // release potential connections you created or data you cached
-        if (resultSet != null) {
+        if (resultSet != null ) {
             try {
                 resultSet.close();
             } catch (SQLException e) {
@@ -254,6 +267,63 @@ public class SQLQueryInputSource implements Serializable {
                 case Types.CHAR:
                 default:
                     builder.withString(entryBuilder.withType(STRING).build(), value == null ? null : String.valueOf(value));
+                    break;
+            }
+        } catch (final SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private void emptyTable(final Record.Builder builder, final ResultSetMetaData metaData, final int columnIndex)
+    {
+        try {
+            final String javaType = metaData.getColumnClassName(columnIndex);
+            final String integerType = Integer.class.getName();
+            final int sqlType = metaData.getColumnType(columnIndex);
+            final Schema.Entry.Builder entryBuilder = builderFactory.newEntryBuilder();
+            entryBuilder.withName(metaData.getColumnName(columnIndex))
+                    .withNullable(metaData.isNullable(columnIndex) != columnNoNulls);
+
+
+            switch (sqlType) {
+                case Types.SMALLINT:
+                case Types.TINYINT:
+                case Types.INTEGER:
+                    if (javaType.equals(integerType)) {
+                        builder.withInt(entryBuilder.withType(INT).build(), 0);
+                    } else {
+                        builder.withLong(entryBuilder.withType(LONG).build(), 0L);
+                    }
+                    break;
+                case Types.FLOAT:
+                case Types.REAL:
+
+                    builder.withFloat(entryBuilder.withType(FLOAT).build(), 0.0F);
+                    break;
+                case Types.DOUBLE:
+                    builder.withDouble(entryBuilder.withType(DOUBLE).build(), 0.0);
+                    break;
+                case Types.BOOLEAN:
+                    builder.withBoolean(entryBuilder.withType(BOOLEAN).build(), false);
+                    break;
+                case Types.DATE:
+                case Types.TIME:
+                case Types.TIMESTAMP:
+                    builder.withDateTime(entryBuilder.withType(DATETIME).build(), new java.util.Date());
+                    break;
+                case Types.BINARY:
+                case Types.VARBINARY:
+                case Types.LONGVARBINARY:
+                    builder.withBytes(entryBuilder.withType(BYTES).build(), null);
+                    break;
+                case Types.BIGINT:
+                case Types.DECIMAL:
+                case Types.NUMERIC:
+                case Types.VARCHAR:
+                case Types.LONGVARCHAR:
+                case Types.CHAR:
+                default:
+                    builder.withString(entryBuilder.withType(STRING).build(), null);
                     break;
             }
         } catch (final SQLException e) {

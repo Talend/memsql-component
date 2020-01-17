@@ -34,6 +34,7 @@ public class TableNameInputSource implements Serializable {
     private Statement statement;
     private ResultSet resultSet;
     private transient Schema schema;
+    private boolean isGuessSchema = false;
     private static final transient Logger LOG = LoggerFactory.getLogger(TableNameInputSource.class);
 
     public TableNameInputSource(@Option("configuration") final TableNameInputMapperConfiguration configuration,
@@ -62,7 +63,14 @@ public class TableNameInputSource implements Serializable {
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.setFetchSize(configuration.getDataset().getFetchSize());
-            resultSet = statement.executeQuery(configuration.getDataset().getQuery());
+            resultSet = statement.executeQuery("select * from " + configuration.getDataset().getTableName());
+            StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+            String genisisClass = stackTraceElements[stackTraceElements.length -1].getClassName();
+            if (genisisClass.contains("guess_schema"))
+            {
+
+                isGuessSchema = true;
+            }
         } catch (final SQLException e) {
             throw new IllegalStateException(e);
         }
@@ -76,8 +84,10 @@ public class TableNameInputSource implements Serializable {
         // return null means the dataset has no more data to go through
         // you can use the builderFactory to create a new Record.
         try {
-            if (!resultSet.next()) {
-                return null;
+            if (!resultSet.next() && !isGuessSchema) {
+
+                    return null;
+
             }
 
             final ResultSetMetaData metaData = resultSet.getMetaData();
@@ -88,7 +98,13 @@ public class TableNameInputSource implements Serializable {
             }
 
             final Record.Builder recordBuilder = builderFactory.newRecordBuilder(schema);
-            IntStream.rangeClosed(1, metaData.getColumnCount()).forEach(index -> addColumn(recordBuilder, metaData, index));
+            if (isGuessSchema) {
+                IntStream.rangeClosed(1, metaData.getColumnCount()).forEach(index -> emptyTable(recordBuilder, metaData, index));
+                isGuessSchema = false;
+            }
+            else
+                IntStream.rangeClosed(1, metaData.getColumnCount()).forEach(index -> addColumn(recordBuilder, metaData, index));
+
             return recordBuilder.build();
         } catch (final SQLException e) {
             throw new IllegalStateException(e);
@@ -192,9 +208,67 @@ public class TableNameInputSource implements Serializable {
         }
     }
 
+    private void emptyTable(final Record.Builder builder, final ResultSetMetaData metaData, final int columnIndex)
+    {
+        try {
+            final String javaType = metaData.getColumnClassName(columnIndex);
+            final String integerType = Integer.class.getName();
+            final int sqlType = metaData.getColumnType(columnIndex);
+            final Schema.Entry.Builder entryBuilder = builderFactory.newEntryBuilder();
+            entryBuilder.withName(metaData.getColumnName(columnIndex))
+                    .withNullable(metaData.isNullable(columnIndex) != columnNoNulls);
+
+
+            switch (sqlType) {
+                case Types.SMALLINT:
+                case Types.TINYINT:
+                case Types.INTEGER:
+                    if (javaType.equals(integerType)) {
+                        builder.withInt(entryBuilder.withType(INT).build(), 0);
+                    } else {
+                        builder.withLong(entryBuilder.withType(LONG).build(), 0L);
+                    }
+                    break;
+                case Types.FLOAT:
+                case Types.REAL:
+
+                        builder.withFloat(entryBuilder.withType(FLOAT).build(), 0.0F);
+                    break;
+                case Types.DOUBLE:
+                        builder.withDouble(entryBuilder.withType(DOUBLE).build(), 0.0);
+                    break;
+                case Types.BOOLEAN:
+                        builder.withBoolean(entryBuilder.withType(BOOLEAN).build(), false);
+                    break;
+                case Types.DATE:
+                case Types.TIME:
+                case Types.TIMESTAMP:
+                    builder.withDateTime(entryBuilder.withType(DATETIME).build(), new java.util.Date());
+                    break;
+                case Types.BINARY:
+                case Types.VARBINARY:
+                case Types.LONGVARBINARY:
+                    builder.withBytes(entryBuilder.withType(BYTES).build(), null);
+                    break;
+                case Types.BIGINT:
+                case Types.DECIMAL:
+                case Types.NUMERIC:
+                case Types.VARCHAR:
+                case Types.LONGVARCHAR:
+                case Types.CHAR:
+                default:
+                    builder.withString(entryBuilder.withType(STRING).build(), null);
+                    break;
+            }
+        } catch (final SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private void addColumn(final Record.Builder builder, final ResultSetMetaData metaData, final int columnIndex) {
         try {
             final String javaType = metaData.getColumnClassName(columnIndex);
+            final String integerType = Integer.class.getName();
             final int sqlType = metaData.getColumnType(columnIndex);
             final Object value = resultSet.getObject(columnIndex);
             final Schema.Entry.Builder entryBuilder = builderFactory.newEntryBuilder();
@@ -205,7 +279,7 @@ public class TableNameInputSource implements Serializable {
                 case Types.TINYINT:
                 case Types.INTEGER:
                     if (value != null) {
-                        if (javaType.equals(Integer.class.getName())) {
+                        if (javaType.equals(integerType)) {
                             builder.withInt(entryBuilder.withType(INT).build(), (Integer) value);
                         } else {
                             builder.withLong(entryBuilder.withType(LONG).build(), (Long) value);
@@ -228,6 +302,7 @@ public class TableNameInputSource implements Serializable {
                         builder.withBoolean(entryBuilder.withType(BOOLEAN).build(), (Boolean) value);
                     }
                     break;
+
                 case Types.DATE:
                     builder.withDateTime(entryBuilder.withType(DATETIME).build(),
                             value == null ? null : new Date(((java.sql.Date) value).getTime()));
@@ -259,4 +334,7 @@ public class TableNameInputSource implements Serializable {
             throw new IllegalStateException(e);
         }
     }
+
+
+
 }
