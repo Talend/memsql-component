@@ -222,6 +222,7 @@ public class MemsqlComponentService {
     {
         DataSource dataSource = createDataSource(datastore);
         try {
+            dataSource.createConnection();
             dataSource.testConnection();
             return new HealthCheckStatus(HealthCheckStatus.Status.OK,i18n.successConnection());
         } catch(SQLException e)

@@ -1,6 +1,7 @@
 package com.memsql.talend.components.source;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.stream.IntStream;
 
@@ -174,6 +175,8 @@ public class TableNameInputSource implements Serializable {
                     }
                     break;
                 case Types.FLOAT:
+                case Types.DECIMAL:
+                case Types.NUMERIC:
                 case Types.REAL:
                     builder.withEntry(entryBuilder.withType(FLOAT).build());
                     break;
@@ -194,8 +197,8 @@ public class TableNameInputSource implements Serializable {
                     builder.withEntry(entryBuilder.withType(BYTES).build());
                     break;
                 case Types.BIGINT:
-                case Types.DECIMAL:
-                case Types.NUMERIC:
+                    builder.withEntry(entryBuilder.withType(LONG).build());
+                    break;
                 case Types.VARCHAR:
                 case Types.LONGVARCHAR:
                 case Types.CHAR:
@@ -230,6 +233,8 @@ public class TableNameInputSource implements Serializable {
                     }
                     break;
                 case Types.FLOAT:
+                case Types.DECIMAL:
+                case Types.NUMERIC:
                 case Types.REAL:
 
                         builder.withFloat(entryBuilder.withType(FLOAT).build(), 0.0F);
@@ -248,16 +253,16 @@ public class TableNameInputSource implements Serializable {
                 case Types.BINARY:
                 case Types.VARBINARY:
                 case Types.LONGVARBINARY:
-                    builder.withBytes(entryBuilder.withType(BYTES).build(), null);
+                    builder.withBytes(entryBuilder.withType(BYTES).build(), "NULL".getBytes());
                     break;
                 case Types.BIGINT:
-                case Types.DECIMAL:
-                case Types.NUMERIC:
+                    builder.withLong(entryBuilder.withType(LONG).build(), 0L);
+                    break;
                 case Types.VARCHAR:
                 case Types.LONGVARCHAR:
                 case Types.CHAR:
                 default:
-                    builder.withString(entryBuilder.withType(STRING).build(), null);
+                    builder.withString(entryBuilder.withType(STRING).build(), "NULL");
                     break;
             }
         } catch (final SQLException e) {
@@ -287,9 +292,11 @@ public class TableNameInputSource implements Serializable {
                     }
                     break;
                 case Types.FLOAT:
+                case Types.DECIMAL:
+                case Types.NUMERIC:
                 case Types.REAL:
                     if (value != null) {
-                        builder.withFloat(entryBuilder.withType(FLOAT).build(), (Float) value);
+                        builder.withFloat(entryBuilder.withType(FLOAT).build(), javaType.equals("java.math.BigDecimal") ? ((BigDecimal) value).floatValue() : (Float) value);
                     }
                     break;
                 case Types.DOUBLE:
@@ -321,8 +328,8 @@ public class TableNameInputSource implements Serializable {
                     builder.withBytes(entryBuilder.withType(BYTES).build(), value == null ? null : (byte[]) value);
                     break;
                 case Types.BIGINT:
-                case Types.DECIMAL:
-                case Types.NUMERIC:
+                    builder.withLong(entryBuilder.withType(LONG).build(), (Long) value);
+                    break;
                 case Types.VARCHAR:
                 case Types.LONGVARCHAR:
                 case Types.CHAR:
