@@ -8,3 +8,4 @@ mvnw
 .project
 .DS_Store
 /.settings/
+/bin/
