@@ -5,3 +5,6 @@
 memsql-component.iml
 mvnw.cmd
 mvnw
+.project
+.DS_Store
+/.settings/
