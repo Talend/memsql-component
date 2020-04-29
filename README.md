@@ -10,17 +10,14 @@ Talend Pipeline Designer is currently in testing for this component and will be 
 ## How to setup in your environment ##
 On the same machine as your Talend Studio
 ### PreRequisites ###
-1. Install [Git](https://git-scm.com/downloads)
-2. Install [Maven](https://maven.apache.org/download.cgi)
+1. Java 1.8 JRE
 
-### Build and Deploy ###
-1. git clone https://github.com/tcgibennett/memsql-component.git
-2. cd into memsql-component directory
-3. mvn clean install
-4. mvn talend-component:deploy-in-studio -Dtalend.component.studioHome="<Path to Talend Studio>"
+### Deploy ###
+1. Download memsql-component-1.0.0.car
+2. java -jar memsql-component-1.0.0.car studio-deploy <Talend Studio Home>
 EX: /Applications/TalendStudio-7.2.1/studio
-5. Edit <Path to Talend Studio>/configuration/config.ini and add the following at the end of the file **talend.component.server.icon.paths=icons/%s_icon32.png,icons/png/%s_icon32.png**
-6. Start or Restart Talend Studio
+3. Edit <Path to Talend Studio>/configuration/config.ini and add the following at the end of the file **talend.component.server.icon.paths=icons/%s_icon32.png,icons/png/%s_icon32.png**
+4. Start or Restart Talend Studio
 
 ## Documentation ##
 ### MemSQLTableNameInput
