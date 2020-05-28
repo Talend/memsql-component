@@ -3,6 +3,7 @@ package com.memsql.talend.components.source;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import javax.annotation.PostConstruct;
@@ -64,6 +65,10 @@ public class TableNameInputSource implements Serializable {
             connection = dataSource.getConnection();
             statement = connection.createStatement();
             statement.setFetchSize(configuration.getDataset().getFetchSize());
+            String table = configuration.getDataset().getTableName();
+            Pattern validTableName = Pattern.compile("0-9,a-z,A-Z$_");
+            if (!validTableName.matcher(table.trim()).matches())
+                throw new SQLException("Possbile SQL Injection Detected for table name " + table);
             resultSet = statement.executeQuery("select * from " + configuration.getDataset().getTableName());
             StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
             String genisisClass = stackTraceElements[stackTraceElements.length -1].getClassName();

@@ -13,11 +13,12 @@ public class BulkLoadWriter {
     private BufferedWriter bulkFile;
     private static final transient Logger LOG = LoggerFactory.getLogger(BulkLoadWriter.class);
 
-    public static BulkLoadWriter getInstance(String tableName) {
-        if (instance == null)
-            instance = new BulkLoadWriter(tableName);
+    public synchronized static  BulkLoadWriter getInstance(String tableName) {
+        //if (instance == null)
+            //instance = new BulkLoadWriter(tableName);
 
-        return instance;
+        //return instance;
+        return new BulkLoadWriter(tableName);
     }
 
     private BulkLoadWriter(String tableName) {
@@ -27,15 +28,20 @@ public class BulkLoadWriter {
             if (!dir.exists())
                 dir.mkdir();
             path = dir.getCanonicalPath();
+            
             filePath = path + File.separator + tableName +
                     "_" + new Date().getTime() + ".csv";
             if (filePath.contains("\\"))
                 filePath = filePath.replaceAll("\\\\", "/");
-
-            FileWriter fileWriter = new FileWriter(new File(filePath), true);
-            bulkFile = new BufferedWriter(fileWriter);
+            if (filePath.startsWith(dir.getCanonicalPath()))
+            {
+                FileWriter fileWriter = new FileWriter(new File(filePath), true);
+                bulkFile = new BufferedWriter(fileWriter);
+            } else {
+                throw new IOException("Default CanonicalPath has been altered.")
+            }
         } catch(IOException e) {
-           // LOG.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
     }
 
@@ -44,7 +50,7 @@ public class BulkLoadWriter {
             this.bulkFile.write(data);
             this.bulkFile.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage());
         }
 
     }
@@ -53,7 +59,7 @@ public class BulkLoadWriter {
         try {
             this.bulkFile.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage());
         }
     }
 
@@ -62,6 +68,7 @@ public class BulkLoadWriter {
     }
 
     public void delete() {
-        new File(filePath).delete();
+        if (new File(filePath).exists())
+            new File(filePath).delete();
     }
 }

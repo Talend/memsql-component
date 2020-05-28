@@ -7,6 +7,7 @@ import org.talend.sdk.component.api.record.Schema;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,8 @@ public class Insert extends QueryManagerImpl {
 
     @Override
     public Map<Integer, Schema.Entry> getQueryParams() {
-        return namedParams;
+        //return namedParams;
+        return Collections.unmodifiableMap(namedParams);
     }
 
     @Override

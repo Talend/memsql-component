@@ -42,7 +42,8 @@ public class Update extends QueryManagerImpl {
 
     @Override
     public Map<Integer, Schema.Entry> getQueryParams() {
-        return queryParams;
+        return Collections.unmodifiableMap(queryParams);
+        //return queryParams;
     }
 
     @Override

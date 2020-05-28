@@ -48,7 +48,8 @@ public class BulkLoad extends QueryManagerImpl {
 
     @Override
     protected Map<Integer, Schema.Entry> getQueryParams() {
-        return namedParams;
+        return Collections.unmodifiableMap(namedParams);
+        //return namedParams;
     }
 
     @Override
