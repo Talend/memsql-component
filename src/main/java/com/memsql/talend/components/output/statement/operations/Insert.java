@@ -26,6 +26,7 @@ public class Insert extends QueryManagerImpl {
 
     public Insert(final OutputConfiguration configuration, final I18nMessage i18n) {
         super(i18n, configuration);
+        namedParams = new HashMap<>();
     }
 
     @Override
@@ -34,7 +35,7 @@ public class Insert extends QueryManagerImpl {
                 .collect(toList());
         return queries.computeIfAbsent(entries.stream().map(Schema.Entry::getName).collect(joining("::")), key -> {
             final AtomicInteger index = new AtomicInteger(0);
-            namedParams = new HashMap<>();
+           // namedParams = new HashMap<>();
             entries.forEach(name -> namedParams.put(index.incrementAndGet(), name));
             final List<Map.Entry<Integer, Schema.Entry>> params = namedParams.entrySet().stream()
                     .sorted(comparing(Map.Entry::getKey)).collect(toList());

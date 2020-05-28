@@ -38,7 +38,7 @@ public class BulkLoadWriter {
                 FileWriter fileWriter = new FileWriter(new File(filePath), true);
                 bulkFile = new BufferedWriter(fileWriter);
             } else {
-                throw new IOException("Default CanonicalPath has been altered.")
+                throw new IOException("Default CanonicalPath has been altered.");
             }
         } catch(IOException e) {
             LOG.error(e.getMessage());

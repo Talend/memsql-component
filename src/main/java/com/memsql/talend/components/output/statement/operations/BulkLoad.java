@@ -30,8 +30,7 @@ public class BulkLoad extends QueryManagerImpl {
 
     public BulkLoad(final OutputConfiguration configuration, final I18nMessage i18n) {
         super(i18n, configuration);
-
-
+        namedParams = new HashMap<>();
 
     }
 
@@ -39,7 +38,7 @@ public class BulkLoad extends QueryManagerImpl {
     protected String buildQuery(List<Record> records) {
         final List<Schema.Entry> entries = records.stream().flatMap(r -> r.getSchema().getEntries().stream()).distinct()
                 .collect(toList());
-        namedParams = new HashMap<>();
+        //namedParams = new HashMap<>();
         final AtomicInteger index = new AtomicInteger(0);
         entries.forEach(name -> namedParams.put(index.incrementAndGet(), name));
 

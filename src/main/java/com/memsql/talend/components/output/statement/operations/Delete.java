@@ -26,6 +26,7 @@ public class Delete extends QueryManagerImpl {
 
     public Delete(final OutputConfiguration configuration, final I18nMessage i18n) {
         super(i18n, configuration);
+        queryParams = new HashMap<>();
         this.keys = new ArrayList<>(ofNullable(configuration.getKeys()).orElse(emptyList()));
         if (this.keys.isEmpty()) {
             throw new IllegalArgumentException(getI18n().errorNoKeyForDeleteQuery());
@@ -37,7 +38,7 @@ public class Delete extends QueryManagerImpl {
     @Override
     public String buildQuery(final List<Record> records) {
         if (!namedParamsResolved) {
-            queryParams = new HashMap<>();
+            //queryParams = new HashMap<>();
             final AtomicInteger index = new AtomicInteger(0);
             final List<Schema.Entry> entries = records.stream().flatMap(r -> r.getSchema().getEntries().stream()).distinct()
                     .collect(toList());
