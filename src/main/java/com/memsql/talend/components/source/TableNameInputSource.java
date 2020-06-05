@@ -27,6 +27,7 @@ import static org.talend.sdk.component.api.record.Schema.Type.*;
 
 @Documentation("TODO fill the documentation for this source")
 public class TableNameInputSource implements Serializable {
+    private static final Pattern validTableName = Pattern.compile("0-9,a-z,A-Z$_");
     private final TableNameInputMapperConfiguration configuration;
     private final MemsqlComponentService service;
     private final RecordBuilderFactory builderFactory;
@@ -66,7 +67,7 @@ public class TableNameInputSource implements Serializable {
             statement = connection.createStatement();
             statement.setFetchSize(configuration.getDataset().getFetchSize());
             String table = configuration.getDataset().getTableName();
-            Pattern validTableName = Pattern.compile("0-9,a-z,A-Z$_");
+            
             if (!validTableName.matcher(table.trim()).matches())
                 throw new SQLException("Possbile SQL Injection Detected for table name " + table);
             resultSet = statement.executeQuery("select * from " + configuration.getDataset().getTableName());

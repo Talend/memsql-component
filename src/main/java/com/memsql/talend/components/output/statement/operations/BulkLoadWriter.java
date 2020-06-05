@@ -7,17 +7,14 @@ import java.io.*;
 import java.util.Date;
 
 public class BulkLoadWriter {
-    private static BulkLoadWriter instance = null;
+    
     private String filePath = null;
     private File dir = new File("." + File.separator + "memsql_bulk_loader");
     private BufferedWriter bulkFile;
     private static final transient Logger LOG = LoggerFactory.getLogger(BulkLoadWriter.class);
 
-    public synchronized static  BulkLoadWriter getInstance(String tableName) {
-        //if (instance == null)
-            //instance = new BulkLoadWriter(tableName);
+    public static  BulkLoadWriter getInstance(String tableName) {
 
-        //return instance;
         return new BulkLoadWriter(tableName);
     }
 
@@ -33,6 +30,8 @@ public class BulkLoadWriter {
                     "_" + new Date().getTime() + ".csv";
             if (filePath.contains("\\"))
                 filePath = filePath.replaceAll("\\\\", "/");
+            
+            // Detecting if an OS Command Injection
             if (filePath.startsWith(dir.getCanonicalPath()))
             {
                 FileWriter fileWriter = new FileWriter(new File(filePath), true);
