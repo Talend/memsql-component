@@ -34,13 +34,9 @@
     <talend.component.studioHome />
   </properties>
 
+
+
   <dependencies>
-    <dependency>
-      <groupId>org.talend.sdk.component</groupId>
-      <artifactId>component-api</artifactId>
-      <version>1.1.15</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
@@ -52,6 +48,50 @@
       <version>1.7.25</version>
       <scope>provided</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.github.docker-java/docker-java -->
+
+<dependency>
+  <groupId>org.junit.jupiter</groupId>
+  <artifactId>junit-jupiter-params</artifactId>
+  <version>5.5.1</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.projectlombok</groupId>
+  <artifactId>lombok</artifactId>
+  <version>1.18.10</version>
+  <scope>provided</scope>
+</dependency>
+<dependency>
+  <groupId>org.talend.sdk.component</groupId>
+  <artifactId>component-api</artifactId>
+  <version>1.1.20</version>
+  <scope>provided</scope>
+</dependency>
+<dependency>
+  <groupId>org.talend.sdk.component</groupId>
+  <artifactId>component-runtime-http-junit</artifactId>
+  <version>1.1.20</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.talend.sdk.component</groupId>
+  <artifactId>component-runtime-junit</artifactId>
+  <version>1.1.20</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>com.spotify</groupId>
+  <artifactId>docker-client</artifactId>
+  <version>8.16.0</version>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.mybatis</groupId>
+  <artifactId>mybatis</artifactId>
+  <version>3.4.5</version>
+  <scope>test</scope>
+</dependency>
   </dependencies>
 
   <build>

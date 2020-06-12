@@ -27,7 +27,7 @@ import static org.talend.sdk.component.api.record.Schema.Type.*;
 
 @Documentation("TODO fill the documentation for this source")
 public class TableNameInputSource implements Serializable {
-    private static final Pattern validTableName = Pattern.compile("0-9,a-z,A-Z$_");
+    private static final Pattern validTableName = Pattern.compile("[a-zA-Z0-9$_]{3,}");
     private final TableNameInputMapperConfiguration configuration;
     private final MemsqlComponentService service;
     private final RecordBuilderFactory builderFactory;
