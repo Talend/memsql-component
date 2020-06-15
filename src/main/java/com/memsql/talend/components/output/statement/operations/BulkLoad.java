@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.toList;
 
 public class BulkLoad extends QueryManagerImpl {
     private static final transient Logger LOG = LoggerFactory.getLogger(BulkLoad.class);
+    private String filePath = null;
     private Map<Integer, Schema.Entry> namedParams;
 
 
@@ -72,6 +73,10 @@ public class BulkLoad extends QueryManagerImpl {
             throws SQLException {
         List<Reject> rejects = new ArrayList<Reject>();
         BulkLoadWriter writer = BulkLoadWriter.getInstance(getConfiguration().getDataset().getTableName());
+        try {
+            if (filePath == null) filePath = writer.getDirPath();
+        } catch(Exception e) {this.filePath = ".";}
+
         StringBuilder buffer = new StringBuilder();
         List<String> lines = new ArrayList<String>();
 
@@ -88,24 +93,32 @@ public class BulkLoad extends QueryManagerImpl {
             }
             buffer.append(lines.stream().collect(Collectors.joining(","))+"\n");
             writer.write(buffer.toString());
+           
             lines.clear();
         }
 
-
+        writer.close();
         return rejects;
     }
 
     @Override
     public void load(final Connection connection) throws SQLException {
         long start = new Date().getTime();
-        BulkLoadWriter writer = BulkLoadWriter.getInstance(getConfiguration().getDataset().getTableName());
-        writer.close();
-        String filePath = writer.getFilePath();
-        int rows = connection.createStatement().executeUpdate("LOAD DATA LOCAL INFILE '"+filePath+"' INTO TABLE " + getConfiguration().getDataset().getTableName() + " FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n'");
-        LOG.debug("Rows Processed " + rows + "  for file " + filePath);
-        connection.commit();
-        writer.delete();
-
+        
+            File dir = new File(this.filePath);
+            File[] files = dir.listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                return name.startsWith(getConfiguration().getDataset().getTableName());
+                }
+            });
+            for (File file: files)
+            {
+                
+                int rows = connection.createStatement().executeUpdate("LOAD DATA LOCAL INFILE '"+file.getAbsolutePath()+"' INTO TABLE " + getConfiguration().getDataset().getTableName() + " FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\\n'");
+                LOG.debug("Rows Processed " + rows + "  for file " + file.getAbsolutePath());
+                connection.commit();
+                file.delete();
+            }
         System.out.println("Load Data Execution Time: " + (new Date().getTime() - start) + " milliseconds");
     }
 }

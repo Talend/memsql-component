@@ -20,8 +20,10 @@ import com.memsql.talend.components.service.I18nMessage;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.DockerClient.ListContainersParam;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.Container;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ContainerInfo;
@@ -40,10 +42,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @WithMavenServers
 public class MemSQLBaseTest {
-    private  DockerClient dockerClient = null;
-    private  ContainerInfo info = null;
-    private  String id = null;
-    private String label = null;
+    private  static DockerClient dockerClient = null;
+    private  static ContainerInfo info = null;
+    private  static String id = null;
+    private static String label = null;
 
     protected Properties memsqlProps() {
         try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("memSQLConfig.properties")) {
@@ -73,7 +75,7 @@ public class MemSQLBaseTest {
                 {
                     System.out.println("Unable to connect to MemSQL Docker. Retry in 2 seconds");
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(60000);
                     } catch(InterruptedException ie)
                     {
 
@@ -95,8 +97,14 @@ public class MemSQLBaseTest {
         }
         return true;
     }
-    protected void shutdownDockerConfig() throws DockerException, InterruptedException
+    protected void shutdownDockerConfig() throws DockerException, InterruptedException, DockerCertificateException
     {
+        Properties props = memsqlProps();
+        dockerClient = DefaultDockerClient.fromEnv().build();
+        label = props.getProperty("docker.name")+":"+props.getProperty("docker.tag");
+        ListContainersParam params = new ListContainersParam("image", label);
+        List<Container> containers = dockerClient.listContainers(params);
+        id = containers.get(0).id();
             info = dockerClient.inspectContainer(id);
             if (info.state().running()) {
                 System.out.println("Attempting to stop container " + label);

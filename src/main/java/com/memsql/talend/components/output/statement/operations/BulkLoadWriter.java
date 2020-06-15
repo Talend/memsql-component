@@ -17,7 +17,7 @@ public class BulkLoadWriter {
 
         return new BulkLoadWriter(tableName);
     }
-
+    
     private BulkLoadWriter(String tableName) {
         String path = ".";
 
@@ -60,6 +60,10 @@ public class BulkLoadWriter {
         } catch (IOException e) {
             LOG.error(e.getMessage());
         }
+    }
+
+    public String getDirPath() throws IOException {
+        return this.dir.getCanonicalPath();
     }
 
     public String getFilePath() {

@@ -118,6 +118,7 @@ public class Output implements Serializable {
         // TODO : handle discarded records
         try {
             final List<Reject> discards = queryManager.execute(records, datasource);
+            records.clear();
             discards.stream().map(Object::toString).forEach(LOG::error);
         } catch (final SQLException  e) {
             records.stream().map(r -> new Reject(e.getMessage(), r)).map(Reject::toString).forEach(LOG::error);
@@ -130,13 +131,17 @@ public class Output implements Serializable {
         // this is the symmetric method of the init() one,
         // release potential connections you created or data you cached
         // Note: if you don't need it you can delete it
-        if (datasource != null) {
-            try {
-                queryManager.load(datasource.getConnection());
-                datasource.close();
-            } catch (Exception e) {
-                LOG.error(e.getMessage());
+        try {
+            if (records.size() > 0)
+                queryManager.execute(records, datasource);
+            if (datasource != null) {
+                
+                    queryManager.load(datasource.getConnection());
+                    datasource.close();
+                
             }
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
         }
     }
 }
