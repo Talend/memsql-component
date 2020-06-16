@@ -75,7 +75,7 @@ public class MemSQLBaseTest {
                 {
                     System.out.println("Unable to connect to MemSQL Docker. Retry in 2 seconds");
                     try {
-                        Thread.sleep(60000);
+                        Thread.sleep(2000);
                     } catch(InterruptedException ie)
                     {
 

@@ -7,7 +7,7 @@ public class MemSQLDocker extends MemSQLBaseTest {
     {
         MemSQLDocker instance = new MemSQLDocker();
         if (args.length != 1) instance.exit(1,"args length not correct. Args Length " + args.length);
-        if (!args[0].equalsIgnoreCase("start") || !args[0].equalsIgnoreCase("stop")) instance.exit (1, "Not proper command of start|stop. Value: " + args[0]);
+        if (!args[0].equalsIgnoreCase("start") && !args[0].equalsIgnoreCase("stop")) instance.exit (1, "Not proper command of start|stop. Value: " + args[0]);
         if (args[0].equalsIgnoreCase("start"))
             instance.start();
         else

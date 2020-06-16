@@ -1,9 +1,9 @@
 package com.memsql.talend.components;
 
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.util.Properties;
 
-import javax.annotation.PostConstruct;
 
 import com.memsql.talend.components.dataset.SQLQueryDataset;
 import com.memsql.talend.components.dataset.TableNameDataset;
@@ -17,16 +17,29 @@ import com.memsql.talend.components.source.SQLQueryInputSource;
 import com.memsql.talend.components.source.TableNameInputMapperConfiguration;
 import com.memsql.talend.components.source.TableNameInputSource;
 import org.talend.sdk.component.junit.environment.EnvironmentConfiguration.Property;
-import org.junit.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.bootstrap.HttpServer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.talend.sdk.component.api.record.Record;
+import org.talend.sdk.component.api.service.Service;
 import org.talend.sdk.component.api.service.healthcheck.HealthCheckStatus;
 import org.talend.sdk.component.api.service.record.RecordBuilderFactory;
+import org.talend.sdk.component.junit.BaseComponentsHandler;
 import org.talend.sdk.component.junit.environment.Environment;
 import org.talend.sdk.component.junit.environment.EnvironmentConfiguration;
 import org.talend.sdk.component.junit.environment.builtin.ContextualEnvironment;
 import org.talend.sdk.component.junit.environment.builtin.beam.SparkRunnerEnvironment;
+import org.talend.sdk.component.junit5.Injected;
 import org.talend.sdk.component.junit5.WithComponents;
+import org.talend.sdk.component.junit5.WithMavenServers;
+import org.talend.sdk.component.junit5.environment.EnvironmentalTest;
 import org.talend.sdk.component.runtime.record.RecordBuilderFactoryImpl;
 
 @Environment(ContextualEnvironment.class)
@@ -37,31 +50,54 @@ import org.talend.sdk.component.runtime.record.RecordBuilderFactoryImpl;
         @Property(key = "talend.beam.job.runner", value = "org.apache.beam.runners.spark.SparkRunner"),
         @Property(key = "talend.beam.job.filesToStage", value = ""), @Property(key = "spark.ui.enabled", value = "false") })
 
-@WithComponents(value = "com.memsql.talend.components")
+@WithMavenServers
+@WithComponents("com.memsql.talend.components")
+@TestMethodOrder(OrderAnnotation.class)
 public class MemSQLTests extends MemSQLBaseTest {   
 
+    @Service
+    private MemsqlComponentService service;
+
+    private MemSQLDatastore datastore;
+
+    private Properties props;
 
 
-    @Test
-    public void validateConnection() {
-        Properties props = memsqlProps();
-        MemSQLDatastore datastore = buildDataStore(props);
-        MemsqlComponentService service = new MemsqlComponentService();
-        I18nMessage i18n = getI18n();
-        try {
-            final Field internationalField = MemsqlComponentService.class.getDeclaredField("i18n");
-            internationalField.setAccessible(true);
-            internationalField.set(service, i18n);
+    @BeforeAll
+    public static void initialize()
+    {
+        String[] args = {"start"};
+        MemSQLDocker.main(args);
         
-            HealthCheckStatus status = service.validateConnection(datastore);
-            Assertions.assertEquals(HealthCheckStatus.Status.OK, status.getStatus(),"MemSQLDatastore Connection Valid");
-
-        } catch(Exception e) {
-            Assertions.assertEquals(true, false, e.getMessage());
-        }
     }
 
-    @Test
+    @AfterAll
+    public static void deinitialize()
+    {
+        String[] args = {"stop"};
+        MemSQLDocker.main(args);
+    }
+
+    @BeforeEach
+    public void setup()
+    {
+        props = memsqlProps();
+        datastore = buildDataStore(props);
+    }
+
+    @EnvironmentalTest
+    @Order(1)
+    public void validateConnection() throws NoSuchFieldException, IllegalAccessException {
+        
+        final HealthCheckStatus status = service.validateConnection(datastore);
+        Assertions.assertNotNull(status);
+        Assertions.assertEquals(HealthCheckStatus.Status.OK, status.getStatus(),"MemSQLDatastore Connection Valid");
+
+    }
+
+    /*
+    @EnvironmentalTest
+    @Order(2)
     public void tableNameDatasetTest() {
         Properties props = memsqlProps();
         MemSQLDatastore datastore = buildDataStore(props);
@@ -73,16 +109,16 @@ public class MemSQLTests extends MemSQLBaseTest {
         Assertions.assertEquals("select * from " + props.getProperty("memsql.table"),dataset.getQuery());
     }
 
-    @Test
-    public void tableNameInputSourceTest() {
-        try {
+    @EnvironmentalTest
+    @Order(3)
+    public void tableNameInputSourceTest() throws NoSuchFieldException, IllegalAccessException {
             Properties props = memsqlProps();
             MemSQLDatastore datastore = buildDataStore(props);
             TableNameDataset dataset = new TableNameDataset();
             dataset.setDatastore(datastore);
             dataset.setFetchSize(1000);
             dataset.setTableName(props.getProperty("memsql.table"));
-            MemsqlComponentService service = new MemsqlComponentService();
+            
             I18nMessage i18n = getI18n();
             final Field internationalField = MemsqlComponentService.class.getDeclaredField("i18n");
             internationalField.setAccessible(true);
@@ -95,12 +131,10 @@ public class MemSQLTests extends MemSQLBaseTest {
             Record record = source.next();
             Assertions.assertNotNull(record);
             source.release();
-        } catch(Exception e) {
-            Assertions.assertEquals(true, false, e.getMessage());
-        }
     }
 
-    @Test
+    @EnvironmentalTest
+    @Order(4)
     public void sqlQueryDatasetTest()
     {
         Properties props = memsqlProps();
@@ -113,17 +147,18 @@ public class MemSQLTests extends MemSQLBaseTest {
         Assertions.assertEquals("select * from " + props.getProperty("memsql.table"),dataset.getQuery());
     }
 
-    @Test
-    public void sqlQueryInputSourceTest()
+    @EnvironmentalTest
+    @Order(5)
+    public void sqlQueryInputSourceTest() throws NoSuchFieldException, IllegalAccessException
     {
-        try {
+
             Properties props = memsqlProps();
             MemSQLDatastore datastore = buildDataStore(props);
             SQLQueryDataset dataset = new SQLQueryDataset();
             dataset.setDatastore(datastore);
             dataset.setFetchSize(1000);
             dataset.setSqlQuery("select * from " + props.getProperty("memsql.table"));
-            MemsqlComponentService service = new MemsqlComponentService();
+            
             I18nMessage i18n = getI18n();
             final Field internationalField = MemsqlComponentService.class.getDeclaredField("i18n");
             internationalField.setAccessible(true);
@@ -136,16 +171,14 @@ public class MemSQLTests extends MemSQLBaseTest {
             Record record = source.next();
             Assertions.assertNotNull(record);
             source.release();
-        } catch(Exception e) {
-            Assertions.assertEquals(true, false, e.getMessage());
-        }
+
     }
 
-    @Test
-    public void outputInsertTest()
+    @EnvironmentalTest
+    @Order(6)
+    public void outputInsertTest() throws NoSuchFieldException, IllegalAccessException, SQLException
     {
 
-        try {
             Properties props = memsqlProps();
             MemSQLDatastore datastore = buildDataStore(props);
             // Output table
@@ -158,7 +191,7 @@ public class MemSQLTests extends MemSQLBaseTest {
             input.setDatastore(datastore);
             input.setFetchSize(1000);
             input.setTableName(props.getProperty("memsql.table"));
-            MemsqlComponentService service = new MemsqlComponentService();
+            
             I18nMessage i18n = getI18n();
             final Field internationalField = MemsqlComponentService.class.getDeclaredField("i18n");
             internationalField.setAccessible(true);
@@ -187,18 +220,14 @@ public class MemSQLTests extends MemSQLBaseTest {
 
             Assertions.assertEquals(true, true, "outputInsert Success!");
 
-        } catch(Exception e)
-        {
-            Assertions.assertEquals(true, false, e.getMessage());
-        }
 
     }
 
-    @Test
-    public void outputBulkTest()
+    @EnvironmentalTest
+    @Order(7)
+    public void outputBulkTest() throws NoSuchFieldException, IllegalAccessException, SQLException
     {
 
-        try {
             Properties props = memsqlProps();
             MemSQLDatastore datastore = buildDataStore(props);
             // Output table
@@ -211,7 +240,7 @@ public class MemSQLTests extends MemSQLBaseTest {
             input.setDatastore(datastore);
             input.setFetchSize(1000);
             input.setTableName(props.getProperty("memsql.table"));
-            MemsqlComponentService service = new MemsqlComponentService();
+           
             I18nMessage i18n = getI18n();
             final Field internationalField = MemsqlComponentService.class.getDeclaredField("i18n");
             internationalField.setAccessible(true);
@@ -240,10 +269,6 @@ public class MemSQLTests extends MemSQLBaseTest {
 
             Assertions.assertEquals(true, true, "outputInsert Success!");
 
-        } catch(Exception e)
-        {
-            Assertions.assertEquals(true, false, e.getMessage());
-        }
-
     }
+    */
 }
