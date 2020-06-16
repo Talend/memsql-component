@@ -45,14 +45,9 @@ import org.talend.sdk.component.runtime.record.RecordBuilderFactoryImpl;
 @Environment(ContextualEnvironment.class)
 @EnvironmentConfiguration(environment = "Contextual", systemProperties = {}) // EnvironmentConfiguration is necessary for each
                                                                              // @Environment
-@Environment(SparkRunnerEnvironment.class)
-@EnvironmentConfiguration(environment = "Spark", systemProperties = {
-        @Property(key = "talend.beam.job.runner", value = "org.apache.beam.runners.spark.SparkRunner"),
-        @Property(key = "talend.beam.job.filesToStage", value = ""), @Property(key = "spark.ui.enabled", value = "false") })
 
 @WithMavenServers
 @WithComponents("com.memsql.talend.components")
-@TestMethodOrder(OrderAnnotation.class)
 public class MemSQLTests extends MemSQLBaseTest {   
 
     @Service
@@ -95,7 +90,7 @@ public class MemSQLTests extends MemSQLBaseTest {
 
     }
 
-    /*
+    
     @EnvironmentalTest
     @Order(2)
     public void tableNameDatasetTest() {
@@ -270,5 +265,5 @@ public class MemSQLTests extends MemSQLBaseTest {
             Assertions.assertEquals(true, true, "outputInsert Success!");
 
     }
-    */
+    
 }
