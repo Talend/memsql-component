@@ -1,9 +1,0 @@
-Create MemSQL Helios Account
-https://www.memsql.com/helios/
-
-Login to get License for next step
-
-Get Docker image for MemSQL Cluster In A Box
-https://hub.docker.com/r/memsql/cluster-in-a-box
-
-Execute memsql_config.sql under resources in test. This will setup your memsql cluster to perform the Unit Tests
