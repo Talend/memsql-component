@@ -141,9 +141,9 @@ public class MemSQLBaseTest {
             List<PortBinding> hostPorts3306 = new ArrayList<>();
             hostPorts3306.add(PortBinding.of("0.0.0.0", props.getProperty("memsql.jdbc.port")));
             List<PortBinding> hostPorts8080 = new ArrayList<>();
-            hostPorts8080.add(PortBinding.of("0.0.0.0", props.getProperty("memsql.jdbc.port")));
+            hostPorts8080.add(PortBinding.of("0.0.0.0", props.getProperty("memsql.admin.port")));
             portBindings.put(props.getProperty("memsql.jdbc.port"), hostPorts3306);
-            portBindings.put(props.getProperty("memsql.jdbc.port"), hostPorts8080);
+            portBindings.put(props.getProperty("memsql.admin.port"), hostPorts8080);
             HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
             ContainerConfig containerConfig = ContainerConfig.builder()
                     .hostConfig(hostConfig)
